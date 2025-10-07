@@ -4,28 +4,39 @@ import numpy as np
 import pandas as pd
 import requests
 import os
-from vercel import Vercel
 
 app = Flask(__name__)
 
-# ====== Model URLs ======
-SIMILARITY_URL = "https://drive.google.com/file/d/1EK0R1SSmjUR4OW26DSbREBlideZYnHA0/view?usp=drive_link"
-COURSES_URL = "https://drive.google.com/file/d/1COrh6Y3g8XLVwc9LrnIX7hOL9cE_gXr2/view?usp=drive_link"
-COURSE_LIST_URL = "https://drive.google.com/file/d/1kWtYzHBPQwa8YeFqTY45ZNE07t4c_xHA/view?usp=drive_link"
+# ====== Direct Google Drive Download Links ======
+SIMILARITY_URL = "https://drive.google.com/uc?export=download&id=1EK0R1SSmjUR4OW26DSbREBlideZYnHA0"
+COURSES_URL = "https://drive.google.com/uc?export=download&id=1COrh6Y3g8XLVwc9LrnIX7hOL9cE_gXr2"
+COURSE_LIST_URL = "https://drive.google.com/uc?export=download&id=1kWtYzHBPQwa8YeFqTY45ZNE07t4c_xHA"
 
-# ====== Local paths in /tmp ======
-SIMILARITY_PATH = "/models/similarity.pkl"
-COURSES_PATH = "/models/courses.pkl"
-COURSE_LIST_PATH = "/models/course_list.pkl"
+# ====== Detect if running on Vercel ======
+ON_VERCEL = os.environ.get("VERCEL") == "1"
 
-# ====== Download models ======
+# ====== Model directory (use /tmp on Vercel, models/ locally) ======
+MODEL_DIR = "/tmp/models" if ON_VERCEL else "models"
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+SIMILARITY_PATH = os.path.join(MODEL_DIR, "similarity.pkl")
+COURSES_PATH = os.path.join(MODEL_DIR, "courses.pkl")
+COURSE_LIST_PATH = os.path.join(MODEL_DIR, "course_list.pkl")
+
+# ====== Download helper ======
 def download_model(url, path):
     if not os.path.exists(path):
-        r = requests.get(url)
-        r.raise_for_status()
-        with open(path, "wb") as f:
-            f.write(r.content)
+        print(f"📥 Downloading model: {path}")
+        try:
+            r = requests.get(url)
+            r.raise_for_status()
+            with open(path, "wb") as f:
+                f.write(r.content)
+            print(f"✅ Downloaded: {os.path.basename(path)}")
+        except Exception as e:
+            print(f"❌ Failed to download {path}: {e}")
 
+# ====== Ensure models exist ======
 download_model(SIMILARITY_URL, SIMILARITY_PATH)
 download_model(COURSES_URL, COURSES_PATH)
 download_model(COURSE_LIST_URL, COURSE_LIST_PATH)
@@ -42,7 +53,6 @@ course_url_dict = courses_df.set_index('course_name')['course_url'].to_dict()
 def recommend(course_name):
     if course_name not in courses_df['course_name'].values:
         return []
-
     index = courses_df[courses_df['course_name'] == course_name].index[0]
     distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])
     recommended_courses = []
@@ -52,7 +62,7 @@ def recommend(course_name):
         recommended_courses.append({'name': recommended_name, 'url': recommended_url})
     return recommended_courses
 
-# ====== Routes ======
+# ====== Flask Routes ======
 @app.route('/', methods=['GET', 'POST'])
 def index():
     recommended_courses = []
@@ -62,5 +72,6 @@ def index():
         recommended_courses = recommend(selected_course)
     return render_template('index.html', courses=course_names, recommendations=recommended_courses, selected_course=selected_course)
 
-# ====== Wrap for Vercel ======
-app = Vercel(app)
+# ====== Run locally ======
+if __name__ == "__main__":
+    app.run(debug=True)
