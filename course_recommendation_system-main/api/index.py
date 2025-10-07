@@ -9,14 +9,14 @@ from vercel import Vercel
 app = Flask(__name__)
 
 # ====== Model URLs ======
-SIMILARITY_URL = "https://example.com/similarity.pkl"
-COURSES_URL = "https://example.com/courses.pkl"
-COURSE_LIST_URL = "https://example.com/course_list.pkl"
+SIMILARITY_URL = "https://drive.google.com/file/d/1EK0R1SSmjUR4OW26DSbREBlideZYnHA0/view?usp=drive_link"
+COURSES_URL = "https://drive.google.com/file/d/1COrh6Y3g8XLVwc9LrnIX7hOL9cE_gXr2/view?usp=drive_link"
+COURSE_LIST_URL = "https://drive.google.com/file/d/1kWtYzHBPQwa8YeFqTY45ZNE07t4c_xHA/view?usp=drive_link"
 
 # ====== Local paths in /tmp ======
-SIMILARITY_PATH = "/tmp/similarity.pkl"
-COURSES_PATH = "/tmp/courses.pkl"
-COURSE_LIST_PATH = "/tmp/course_list.pkl"
+SIMILARITY_PATH = "/models/similarity.pkl"
+COURSES_PATH = "/models/courses.pkl"
+COURSE_LIST_PATH = "/models/course_list.pkl"
 
 # ====== Download models ======
 def download_model(url, path):
